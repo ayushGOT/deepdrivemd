@@ -70,7 +70,7 @@ class CVAEInferenceApplication(Application):
             )
             .sort_values("lof")  # First sort by lof score
             .head(self.config.num_outliers)  # Take the smallest num_outliers lof scores
-            .sort_values("rmsd")  # Finally, sort the smallest lof scores by rmsd
+        #    .sort_values("rmsd")  # Finally, sort the smallest lof scores by rmsd
         )
 
         df.to_csv(self.workdir / "outliers.csv")
