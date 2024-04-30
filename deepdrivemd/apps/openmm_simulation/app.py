@@ -5,6 +5,7 @@ from typing import Dict, Optional, Tuple
 import MDAnalysis
 import numpy as np
 import numpy.typing as npt
+import parmed as pmd
 
 try:
     import openmm
@@ -69,6 +70,7 @@ def _configure_amber_implicit(
 
 
 def _configure_amber_explicit(
+    pdb_file: PathLike,
     top_file: PathLike,
     dt_ps: float,
     temperature_kelvin: float,
@@ -77,7 +79,8 @@ def _configure_amber_explicit(
     platform_properties: Dict[str, str],
     explicit_barostat: str,
 ) -> "app.Simulation":
-    top = app.AmberPrmtopFile(str(top_file))
+    #top = app.AmberPrmtopFile(str(top_file))    # original method of parsing as imnplemented in this code
+    top = pmd.load_file(str(top_file), xyz = str(pdb_file))
     system = top.createSystem(
         nonbondedMethod=app.PME,
         nonbondedCutoff=1.0 * u.nanometer,
@@ -189,6 +192,7 @@ def configure_simulation(
         assert top_file is not None
         pdb = None
         sim = _configure_amber_explicit(
+            pdb_file,
             top_file,
             dt_ps,
             temperature_kelvin,
@@ -341,13 +345,15 @@ class MDSimulationApplication(Application):
         # Get atomic coordinates of reference atoms
         ref_positions = ref_u.select_atoms(self.config.mda_selection).positions.copy()
         atoms = mda_u.select_atoms(self.config.mda_selection)
+        cm_atoms = mda_u.select_atoms(self.config.cm_selection)      # atoms to calculate contact maps
         box = mda_u.atoms.dimensions
         rows, cols, rmsds = [], [], []
         for _ in mda_u.trajectory:
             positions = atoms.positions
+            cm_positions = cm_atoms.positions       # atom positions to be used to calculate contact maps
             # Compute contact map of current frame (scipy lil_matrix form)
             cm = distances.contact_matrix(
-                positions, self.config.cutoff_angstrom, box=box, returntype="sparse"
+                cm_positions, self.config.cutoff_angstrom, box=box, returntype="sparse"
             )
             coo = cm.tocoo()
             rows.append(coo.row.astype("int16"))
