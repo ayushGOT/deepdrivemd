@@ -23,8 +23,9 @@ class MDSimulationSettings(ApplicationSettings):
     heat_bath_friction_coef: float = 1.0
     rmsd_reference_pdb: Path
     """Reference PDB file to compute RMSD to each frame."""
+    cm_selection: str = "protein and name CA"
     mda_selection: str = "protein and name CA"
-    """MDAnalysis selection to run contact map and RMSD analysis on."""
+    """Atom selections to run contact map and RMSD analysis on."""
     cutoff_angstrom: float = 8.0
     """Atoms within this cutoff are said to be in contact."""
 
